@@ -1,21 +1,26 @@
 # Picture of the Day
 
 ## Description
-"Picture of the Day" (POTD) is a Python 3 script that downloads the photo of the day from anyone or all of the following:
+"Picture of the Day" (POTD) downloads the photo of the day from any or all of the following websites:
+
 * National Geographic
 * Bing
 * Wikimedia
 * The Guardian
 * The Smithsonian
 
-and set it as the wallpaper of your desktop. Windows, GNOME 3 and Plasma 5 desktops are supported.
-Moreover, there is also an option to download the Photo of the day from all supported websites and switch them periodically as the wallpaper of your desktop.
+and set it as the wallpaper of your desktop. 
+
+GNOME 3, GNOME 40, KDE, XFCE, Windows and MacOSX desktops are supported.
+
+Moreover, there is also an option to download the Photo of the day from all the supported websites and switch over them periodically as the wallpaper of your desktop.
+
+## Disclaimer
+This software is not affiliated with or sponsored by any of those websites.
 
 ## Requirements
-You need Python 3 and some packages, namely BeautifulSoup 4 and lxml.
-
 In order to install the required packages, run:
-```pip3 install bs4 lxml```
+```pip3 install -r requirements.txt```
 
 ## Command line arguments
 
