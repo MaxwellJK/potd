@@ -198,6 +198,7 @@ if __name__ == "__main__":
     parser.add_argument('--site', choices=['ng', 'bing', 'wiki', 'guardian','nasa', 'smith', 'all', 'ask'], 
     	help='The website from which to download Photo of the Day.', 
     	default="ask")
+    parser.add_argument('--remove-all', action='store_true', default=False, help='Remove all saved pictures to save space and quit.')
     parser.add_argument('--loop', action='store_true', default=False, help='Loop perdiocally over the wallpapers')
     parser.add_argument('--debug', action='store_true', default=False, help=argparse.SUPPRESS)
     parser.add_argument('--period', type=int, default=60, help='Period of wallpaper change, in seconds (only if --loop is set)')
@@ -209,6 +210,20 @@ if __name__ == "__main__":
     parser.add_argument('--force-download', action='store_true', default=False, help='Force the download of the wallpaper ' \
         'regardless of whether we have already downloaded that wallpaper today')
     args = parser.parse_args()
+    
+    # Generate file paths
+    env = deskenv.get_desktop_environment()
+    img_dir = getOutputDir(env)
+    todaystr = datetime.date.today().isoformat().replace("-","")
+    img_path = os.path.join(img_dir, todaystr)
+    
+    # Remove all images to save space and quit
+    if args.remove_all:
+        filelist = [os.path.join(img_dir,f) for f in os.listdir(img_dir)]
+        for f in filelist:
+            print(f"Removing '{f}'")
+            os.unlink(f)
+        sys.exit(0)
     
     # Ask the user which website to use
     if args.site=="ask" and not args.loop:
@@ -240,16 +255,7 @@ if __name__ == "__main__":
     if args.loop:
         args.site = "all"
 
-    # Generate file paths
-    env = deskenv.get_desktop_environment()
-    # name of the output image file
-    img_dir = getOutputDir(env)
-    todaystr = datetime.date.today().isoformat().replace("-","")
-    img_path = os.path.join(img_dir, todaystr)
-    json_path = os.path.splitext(img_path)[0] + ".json"
-
     # Download wallpaper images
-
     spec_path = None
     
     if args.site in ['ng', 'all']:
