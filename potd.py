@@ -9,80 +9,18 @@ if sys.version_info[0] == 3 and sys.version_info[1] < 6:
     raise Exception("You must run the script with Python >= 3.6")
 
 import requests
-from bs4 import BeautifulSoup   
-import os.path
+from bs4 import BeautifulSoup
 import datetime
 import json
 import argparse
 import subprocess
 import time
-import deskenv
 import os
 import re
+import random
 
-# Change the wallpaper
-def changeWallpaper(env, img_path, mode):
-    print("changeWallpaper: changing wallpaper to '{}'".format(img_path))
-    if env == "gnome":
-        setWallpaperGnome(img_path, mode)
-    elif env == "unity":
-        setWallpaperGnome(img_path)
-    elif env == "windows":
-        setWallpaperWindows(img_path)
-    elif env == "kde":
-        setWallpaperPlasma5(img_path)
-    elif env == "xfce4":
-        setWallpaperXfce4(img_path)
-    else:
-        print("Error in changeWallpaper(): Platform '{}' not implemented yet".format(env))
-
-# Set wallpaper on PLASMA 5 desktop
-def setWallpaperPlasma5(image_file):
-    import dbus
-    jscript = """
-    var allDesktops = desktops();
-    print (allDesktops);
-    for (i=0;i<allDesktops.length;i++) {
-        d = allDesktops[i];
-        d.wallpaperPlugin = "org.kde.image";
-        d.currentConfigGroup = Array("Wallpaper", "org.kde.image", "General");
-        d.writeConfig("Image", "file://""" + image_file + """");
-        }"""
-    bus = dbus.SessionBus()
-    plasma = dbus.Interface(bus.get_object('org.kde.plasmashell', '/PlasmaShell'), dbus_interface='org.kde.PlasmaShell')
-    plasma.evaluateScript(jscript)
-    
-# Set wallpaper on MAC OSX desktop (untested) 
-# See: https://stackoverflow.com/questions/431205/how-can-i-programmatically-change-the-background-in-mac-os-x
-def setWallpaperMac(image_file):
-    from appscript import app, mactypes
-    app('Finder').desktop_picture.set(mactypes.File(image_file))
-
-# Set wallpaper on Windows desktop
-def setWallpaperWindows(image_file):
-    import ctypes
-    SPI_SETDESKWALLPAPER = 20 
-    SPIF_UPDATEINIFILE = 1
-    ctypes.windll.user32.SystemParametersInfoW(SPI_SETDESKWALLPAPER, 0, os.path.abspath(image_file), SPIF_UPDATEINIFILE)
-
-#Set wallpaper on GNOME desktop
-def setWallpaperGnome(image_file, mode="scaled"):
-    image_file = os.path.abspath(image_file)
-    # Set background image
-    command = "/usr/bin/gsettings set org.gnome.desktop.background picture-uri file://" + image_file
-    #print("COMMAND: "+command)
-    subprocess.run(command.split())
-    # Set "scaled" option to avoid image is stretched
-    command = f"/usr/bin/gsettings set org.gnome.desktop.background picture-options {mode}"
-    #print("COMMAND: "+command)
-    subprocess.run(command.split())
-
-#Set wallpaper on XFCE4 desktop
-def setWallpaperXfce4(image_file):
-    image_file = os.path.abspath(image_file)
-    command = os.path.join(os.path.dirname(os.path.abspath(sys.argv[0])), "./change_xfce4_wallpaper.sh") + " " + image_file
-    print("COMMAND: "+command)
-    subprocess.run(command.split())
+import deskenv
+from change_wallpaper import changeWallpaper
     
 def downloadFile(url, output_filepath):
     print("Downloading '"+url+"' into '"+output_filepath+"'")
@@ -187,7 +125,7 @@ def getBingLink(out_file):
 def getGuardianLink(out_file, n=1):
 
     # Download Home
-    print("Downloading Guardian home page...")
+    print(f"Downloading Guardian wallpaper #{n} ...")
     r = requests.get('http://www.theguardian.com/international')    
     if(r.status_code != 200):
         print("ERROR: status_code is not 200, but instead it's "+str(r.status_code))
@@ -195,11 +133,12 @@ def getGuardianLink(out_file, n=1):
     
     # Get "Best Photographs of the day" card
     soup = BeautifulSoup(r.content, "lxml")    
-    span = soup.find("span", text="Best photographs of the day")
-    assert(span is not None)
-    
-    # Get link to webpage with picture of the day
-    link = span.parent["href"]
+    div = soup.find("div", class_="fc-item--gallery")
+    assert(div is not None)
+    div = div.find("div", class_="fc-item__container")
+    assert(div is not None)
+    link = div.a["href"]
+    assert(link is not None)
     
     # Download gallery webpage
     print("Downloading Guardian gallery page...")
@@ -211,6 +150,9 @@ def getGuardianLink(out_file, n=1):
     # Get first picture of the gallery
     soup = BeautifulSoup(r.content, "lxml") 
     picture = soup.find("li", {"id":f"img-{n}"})
+    if picture is None:
+        print("Failed to find a picture in The Guardian")
+        return None
     picture = picture.figure.find("a", class_="gallery__img-container")
     picture = picture.find("div", class_="u-responsive-ratio").picture
     picture = picture.find("source")["srcset"]
@@ -260,7 +202,7 @@ if __name__ == "__main__":
     parser.add_argument('--debug', action='store_true', default=False, help=argparse.SUPPRESS)
     parser.add_argument('--period', type=int, default=60, help='Period of wallpaper change, in seconds (only if --loop is set)')
     parser.add_argument('--n', type=int, default=1, help='If the website supports more than one POTD, specify which one to download. '\
-        'Currently supported only for The Guardian.')
+        'Ignored in case mode=\'all\'. Currently supported only for The Guardian.')
     parser.add_argument('--mode', type=str, default="scaled", help='Specify the mode in which wallpaper id displayed. ' \
         'Possible values are: none, wallpaper, centered, scaled, stretched, zoom, spanned. ' \
         'Currently only supported on GNOME.')
@@ -312,9 +254,7 @@ if __name__ == "__main__":
     
     if args.site in ['ng', 'all']:
         spec_path = os.path.join(img_path+"ng.jpg")
-        download = not os.path.isfile(spec_path)
-        if args.force_download:
-            download = True
+        download = (not os.path.isfile(spec_path)) or args.force_download
         if download:
             getNGLink(spec_path)
         else:
@@ -322,9 +262,7 @@ if __name__ == "__main__":
             
     if args.site in ['bing', 'all']:
         spec_path = os.path.join(img_path+"bing.jpg")
-        download = not os.path.isfile(spec_path)
-        if args.force_download:
-            download = True
+        download = (not os.path.isfile(spec_path)) or args.force_download
         if download:
             getBingLink(spec_path)    
         else:
@@ -332,29 +270,37 @@ if __name__ == "__main__":
             
     if args.site in ['wiki', 'all']:
         spec_path = os.path.join(img_path+"wiki.jpg")
-        download = not os.path.isfile(spec_path)
-        if args.force_download:
-            download = True
+        download = (not os.path.isfile(spec_path)) or args.force_download
         if download:
             getWikiMediaLink(spec_path)
         else:
             print("Wikimedia wallpaper already downloaded")
         
-    if args.site in ['guardian', 'all']:
+    # Download a specific The Guardian wallpaper
+    if args.site in ['guardian']:
         spec_path = os.path.join(f"{img_path}guardian{args.n}.jpg")
-        download = not os.path.isfile(spec_path)
-        if args.force_download:
-            download = True
+        download = (not os.path.isfile(spec_path)) or args.force_download
         if download:
             getGuardianLink(spec_path, args.n)
         else:
             print("The Guardian wallpaper already downloaded")
+    
+    # Download all The Guardian wallpapers        
+    if args.site in ['all']:
+        del args.n
+        for n in range(1, 20):
+            spec_path = os.path.join(f"{img_path}guardian{n}.jpg")
+            download = (not os.path.isfile(spec_path)) or args.force_download
+            if download:
+                res = getGuardianLink(spec_path, n)
+                if res is None:
+                    break
+            else:
+                print("The Guardian wallpaper already downloaded")
         
     if args.site in ['nasa', 'all']:
         spec_path = os.path.join(img_path+"nasa.jpg")
-        download = not os.path.isfile(spec_path)
-        if args.force_download:
-            download = True
+        download = (not os.path.isfile(spec_path)) or args.force_download
         if download:
             getNASALink(spec_path)
         else:
@@ -362,9 +308,7 @@ if __name__ == "__main__":
     
     if args.site in ['smith', 'all']:
         spec_path = os.path.join(img_path+"smith.jpg")
-        download = not os.path.isfile(spec_path)
-        if args.force_download:
-            download = True
+        download = (not os.path.isfile(spec_path)) or args.force_download
         if download:
             getSmithLink(spec_path)
         else:
@@ -373,13 +317,15 @@ if __name__ == "__main__":
     # Set the image as the new desktop wallpaper
     # Periodically rotate among images
     if args.loop:
-        filelist = [f for f in os.listdir(img_dir) if f[0:8]==todaystr]
+        filelist = [os.path.join(img_dir,f) for f in os.listdir(img_dir) if f[0:8]==todaystr]
+        random.shuffle(filelist)
+        print(f"filelist={filelist}")
         while True:
             print("Entering loop....")
             for file in filelist:
-                changeWallpaper(env, spec_path, args.mode)
+                changeWallpaper(env, file, args.mode)
                 print(f"Sleeping for {args.period} seconds...")
-                time.sleep(args.period*1000)
+                time.sleep(args.period)
             
     # Set the image one-shot
     else:
