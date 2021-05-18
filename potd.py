@@ -203,7 +203,7 @@ if __name__ == "__main__":
     parser.add_argument('--debug', action='store_true', default=False, help=argparse.SUPPRESS)
     parser.add_argument('--period', type=int, default=60, help='Period of wallpaper change, in seconds (only if --loop is set)')
     parser.add_argument('--n', type=int, default=1, help='If the website supports more than one POTD, specify which one to download. '\
-        'Ignored in case mode=\'all\'. Currently supported only for The Guardian.')
+        'Ignored in case --site=\'all\'. Currently supported only for The Guardian.')
     parser.add_argument('--mode', type=str, default="scaled", help='Specify the mode in which wallpaper id displayed. ' \
         'Possible values are: none, wallpaper, centered, scaled, stretched, zoom, spanned. ' \
         'Currently only supported on GNOME.')
