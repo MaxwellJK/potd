@@ -9,14 +9,24 @@ import argparse
 import os
 import re
 from pathlib import Path
+import subprocess
 
 
 def downloadFile(url, output_filepath):
-    # print("Downloading '" + str(url) + "' into '" + str(output_filepath) + "'")
+    #print("Downloading '" + str(url) + "' into '" + str(output_filepath) + "'")
     r = requests.get(url)
-    with open(output_filepath, "wb") as fd:
-        for chunk in r.iter_content(chunk_size=128):
-            fd.write(chunk)
+    if r.status_code != 200:
+        #print("ERROR: Image download failed with requests.get")
+        cmd = ["wget", url, "-O", output_filepath]
+        res = subprocess.run(cmd, capture_output=True, text=True)
+        if res.returncode != 0:
+            print("ERROR: Image download failed with wget")
+            return None
+    else:
+        # Save file downloaded with requests.get
+        with open(output_filepath, "wb") as fd:
+            for chunk in r.iter_content(chunk_size=128):
+                fd.write(chunk)
 
 
 # Get the link of the Smithsonian image of the day
