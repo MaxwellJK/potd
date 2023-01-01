@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/python
 
 # Copyright (C) 2022 Raffaele Mancuso
 
@@ -176,12 +176,6 @@ if __name__ == "__main__":
         default="",
     )
     parser.add_argument(
-        "--remove-all",
-        action="store_true",
-        default=False,
-        help="Remove all saved pictures to save space and quit.",
-    )
-    parser.add_argument(
         "--debug", action="store_true", default=False, help=argparse.SUPPRESS
     )
     parser.add_argument(
@@ -197,14 +191,6 @@ if __name__ == "__main__":
         help="Force the download of the wallpaper regardless of whether we have already downloaded that wallpaper today",
     )
     args = parser.parse_args()
-
-    # Remove all images to save space and quit
-    if args.remove_all:
-        filelist = [os.path.join(img_dir, f) for f in os.listdir(img_dir)]
-        for f in filelist:
-            print(f"Removing '{f}'")
-            os.unlink(f)
-        sys.exit(0)
 
     # Ask the user which website to use
     if args.site == "ask":
