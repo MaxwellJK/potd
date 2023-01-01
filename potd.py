@@ -10,6 +10,7 @@ import os
 import re
 from pathlib import Path
 import subprocess
+import sys
 
 
 def downloadFile(url, output_filepath):
@@ -193,30 +194,21 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     # Ask the user which website to use
-    if args.site == "ask":
+    if args.site == "":
+        arr = [("ng", "National Geographic"), ("bing","Bing"), ("wiki", "Wikimedia"),
+               ("guardian", "The Guardian"), ("nasa", "NASA"), ("smith", "The Smithsonian")]
         print("Choose a website:")
-        print("1. National Geographic")
-        print("2. Bing")
-        print("3. Wikimedia")
-        print("4. The Guardian")
-        print("5. NASA")
-        print("6. Smithsosian")
+        for i,(_,site) in enumerate(arr):
+            print(f"{i}. {site}")
         choice = input("Enter your choice: ")
-        if choice == "1":
-            args.site = "ng"
-        elif choice == "2":
-            args.site = "bing"
-        elif choice == "3":
-            args.site = "wiki"
-        elif choice == "4":
-            args.site = "guardian"
-        elif choice == "5":
-            args.site = "nasa"
-        elif choice == "6":
-            args.site = "smith"
-        else:
-            print("Invalid choice")
-            sys.exit(1)
+        if not choice.isnumeric():
+            print("ERROR: Not a number :(")
+            sys.exit()
+        choice = int(choice)
+        if (choice<0 or choice>(len(arr)-1)):
+            print("ERROR: Choice out of range")
+            sys.exit()
+        args.site = arr[choice][0]
 
     # Download wallpaper images
     img_dir = Path(os.path.expandvars("$HOME")) / "Pictures" / "potd"
