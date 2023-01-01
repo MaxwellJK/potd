@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-# Copyright (C) 2022 Raffaele Mancuso
+# Copyright (C) 2023 Raffaele Mancuso
 
 import requests
 from bs4 import BeautifulSoup
