@@ -7,6 +7,7 @@ from bs4 import BeautifulSoup
 import datetime
 import argparse
 import os
+import random
 import re
 from pathlib import Path
 import subprocess
@@ -18,7 +19,8 @@ def downloadFile(url, output_filepath):
     r = requests.get(url)
     if r.status_code != 200:
         #print("ERROR: Image download failed with requests.get")
-        cmd = ["wget", url, "-O", output_filepath]
+        # cmd = ["wget", url, "-O", output_filepath]
+        cmd = ["curl", url, "-O", output_filepath]
         res = subprocess.run(cmd, capture_output=True, text=True)
         if res.returncode != 0:
             print("ERROR: Image download failed with wget")
@@ -107,7 +109,8 @@ def getBingLink(out_file):
     soup = BeautifulSoup(r.content, "lxml")
     # re.match -> only matches AT THE BEGINNING OF THE STRING
     # *? is the non-greedy version
-    div_img = soup.find("div", {"class", "img_cont"})
+    # div_img = soup.find("div", {"class", "img_cont"})
+    div_img = soup.find("link", id="preloadBg", href=True)
     assert div_img is not None
     img_link = div_img["style"]
     img_link = re.search(r"url\((.*)&", img_link).group(1)
@@ -172,9 +175,9 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "--site",
-        choices=["ng", "bing", "wiki", "guardian", "nasa", "smith"],
+        choices=["ng", "bing", "wiki", "guardian", "nasa", "smith", "random"],
         help="The website from which to download Photo of the Day.",
-        default="",
+        default="random",
     )
     parser.add_argument(
         "--debug", action="store_true", default=False, help=argparse.SUPPRESS
@@ -229,6 +232,9 @@ if __name__ == "__main__":
             getNASALink(spec_path)
         elif args.site == "smith":
             getSmithLink(spec_path)
+        elif args.site == "random":
+            sites_list = [getNGLink, getBingLink, getWikiMediaLink, getNASALink]
+            random.choice(sites_list)(spec_path)
         else:
             print("ERROR: Unknown site")
     print(spec_path, end="")
