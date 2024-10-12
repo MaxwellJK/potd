@@ -21,8 +21,8 @@ jobs:
       id: unixts
       run: |
         ts=$(date +%s)
-        echo "Export vatiables"
-        export "tag_ts=$ts" >> $GITHUB_OUTPUT
+        echo "Export variables"
+        export "tag_ts=${echo $ts}" >> $GITHUB_OUTPUT
 
     - name: Build and push
       run: |
