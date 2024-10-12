@@ -17,9 +17,12 @@ jobs:
     # - name: Build the Docker image
     #   run: docker build . --file Dockerfile --tag potd:$(date +%s)
 
-    - name: Unixtimestamp tag
+    - name: Unix timestamp tag
       id: unixts
-      run: export ts=$(date +%s)
+      run: |
+        ts=$(date +%s)
+        echo "Export vatiables"
+        export "tag_ts=$ts" >> $GITHUB_OUTPUT
 
     - name: Build and push
       uses: docker/build-push-action@v6
@@ -27,4 +30,4 @@ jobs:
         # context: .
         file: Dockerfile
         push: true
-        tags: ghcr.io/maxwelljk/potd:${{ steps.unixts.outputs.ts }}, ghcr.io/maxwelljk/potd:latest
+        tags: ghcr.io/maxwelljk/potd:${{ steps.unixts.outputs.tag_ts }}, ghcr.io/maxwelljk/potd:latest
