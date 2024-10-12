@@ -214,10 +214,12 @@ if __name__ == "__main__":
         args.site = arr[choice][0]
 
     # Download wallpaper images
-    img_dir = Path(os.path.expandvars("$HOME")) / "Pictures" / "potd"
+    # img_dir = Path(os.path.expandvars("$HOME")) / "Pictures" / "potd"
+    img_dir = Path('/app/image/')
     img_dir.mkdir(exist_ok=True, parents=True)
-    todaystr = datetime.date.today().isoformat().replace("-", "")
-    spec_path = img_dir / f"{todaystr}-{args.site}-{args.n}.jpg"
+    # todaystr = datetime.date.today().isoformat().replace("-", "")
+    # spec_path = img_dir / f"{todaystr}-{args.site}-{args.n}.jpg"
+    spec_path = img_dir / f"{args.site}-{args.n}.jpg"
     download = (not spec_path.is_file()) or args.force_download
     if download:
         if args.site == "ng":
