@@ -25,13 +25,10 @@ jobs:
         echo "tag_ts=$ts" >> $GITHUB_OUTPUT
 
     - name: Build and push
+      env:
+        CR_PAT: ${{ secrets.CR_PAT }}
       run: |
         docker build . -t ghcr.io/maxwelljk/potd:${{ steps.unixts.outputs.tag_ts }} -t ghcr.io/maxwelljk/potd:latest
+        echo $env:CR_PAT | sudo docker login ghcr.io -u maxwelljk --password-stdin
         docker push ghcr.io/maxwelljk/potd:${{ steps.unixts.outputs.tag_ts }}
         docker push ghcr.io/maxwelljk/potd:latest
-      # uses: docker/build-push-action@v6
-      # with:
-      #   # context: .
-      #   file: Dockerfile
-      #   push: true
-      #   tags: ghcr.io/maxwelljk/potd:${{ steps.unixts.outputs.tag_ts }}, ghcr.io/maxwelljk/potd:latest
