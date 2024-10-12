@@ -23,6 +23,4 @@ jobs:
         # context: .
         file: Dockerfile
         push: true
-        tags: 
-          - ghcr.io/maxwelljk/potd:{{ now() }}
-          - ghcr.io/maxwelljk/potd:latest
+        tags: ghcr.io/maxwelljk/potd:{{ now() }}, ghcr.io/maxwelljk/potd:latest
