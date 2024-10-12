@@ -25,9 +25,13 @@ jobs:
         export "tag_ts=$ts" >> $GITHUB_OUTPUT
 
     - name: Build and push
-      uses: docker/build-push-action@v6
-      with:
-        # context: .
-        file: Dockerfile
-        push: true
-        tags: ghcr.io/maxwelljk/potd:${{ steps.unixts.outputs.tag_ts }}, ghcr.io/maxwelljk/potd:latest
+      run: |
+        docker build . -t ghcr.io/maxwelljk/potd:${{ steps.unixts.outputs.tag_ts }} -t ghcr.io/maxwelljk/potd:latest
+        docker push ghcr.io/maxwelljk/potd:${{ steps.unixts.outputs.tag_ts }}
+        docker push ghcr.io/maxwelljk/potd:latest
+      # uses: docker/build-push-action@v6
+      # with:
+      #   # context: .
+      #   file: Dockerfile
+      #   push: true
+      #   tags: ghcr.io/maxwelljk/potd:${{ steps.unixts.outputs.tag_ts }}, ghcr.io/maxwelljk/potd:latest
