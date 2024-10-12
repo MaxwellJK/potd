@@ -28,7 +28,11 @@ jobs:
       env:
         CR_PAT: ${{ secrets.CR_PAT }}
       run: |
+        echo "Building the images"
         docker build . -t ghcr.io/maxwelljk/potd:${{ steps.unixts.outputs.tag_ts }} -t ghcr.io/maxwelljk/potd:latest
-        echo $env:CR_PAT | sudo docker login ghcr.io -u maxwelljk --password-stdin
+        echo "Logging in"
+        echo $env:CR_PAT | docker login ghcr.io -u maxwelljk --password-stdin
+        echo "Pushing images"
         docker push ghcr.io/maxwelljk/potd:${{ steps.unixts.outputs.tag_ts }}
         docker push ghcr.io/maxwelljk/potd:latest
+        echo "Done"
