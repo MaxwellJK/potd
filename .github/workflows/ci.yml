@@ -1,4 +1,4 @@
-name: Pcture Of The Day Docker Image build
+name: Picture Of The Day Docker Image build
 
 on:
   push:
@@ -14,8 +14,6 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
-    # - name: Build the Docker image
-    #   run: docker build . --file Dockerfile --tag potd:$(date +%s)
 
     - name: Unix timestamp tag
       id: unixts
@@ -32,8 +30,6 @@ jobs:
         password: ${{ secrets.CR_PAT }}
 
     - name: Build and push
-      env:
-        CR_PAT: ${{ secrets.CR_PAT }}
       run: |
         echo "Building the images"
         docker build . -t ghcr.io/maxwelljk/potd:${{ steps.unixts.outputs.tag_ts }} -t ghcr.io/maxwelljk/potd:latest
