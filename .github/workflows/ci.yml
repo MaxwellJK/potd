@@ -22,7 +22,7 @@ jobs:
       run: |
         ts=$(date +%s)
         echo "Export variables"
-        export "tag_ts=${echo $ts}" >> $GITHUB_OUTPUT
+        echo "tag_ts=${echo $ts}" >> $GITHUB_OUTPUT
 
     - name: Build and push
       run: |
