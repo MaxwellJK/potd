@@ -17,10 +17,14 @@ jobs:
     # - name: Build the Docker image
     #   run: docker build . --file Dockerfile --tag potd:$(date +%s)
 
+    - name: Unixtimestamp tag
+      id: unixts
+      run: export ts=$(date +%s)
+
     - name: Build and push
       uses: docker/build-push-action@v6
       with:
         # context: .
         file: Dockerfile
         push: true
-        tags: ghcr.io/maxwelljk/potd:{{ now() }}, ghcr.io/maxwelljk/potd:latest
+        tags: ghcr.io/maxwelljk/potd:${{ steps.unixts.outputs.ts }}, ghcr.io/maxwelljk/potd:latest
