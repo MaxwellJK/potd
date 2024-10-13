@@ -1,4 +1,5 @@
 FROM alpine
+# FROM ubuntu:latest
 MAINTAINER marcofontana.ing@gmail.com
 
 RUN mkdir /app
@@ -17,17 +18,18 @@ RUN chmod 0644 /etc/cron.d/potd-cron
 # Apply cron job
 RUN crontab /etc/cron.d/potd-cron
  
-# Create the log file to be able to run tail
-RUN touch /var/log/cron.log
+# # Create the log file to be able to run tail
+# RUN touch /var/log/cron.log
 
 # Copy potd.py file to the app directory
 COPY potd.py /app
 COPY requirements.txt /app
 
+# # Install the requirements and create folders
 RUN pip install -r /app/requirements.txt --break-system-packages
-
 RUN mkdir image/
 
 # Run the command on container startup
-# CMD crond -b && tail -f /var/log/cron.log
-CMD sleep infinity
+# RUN python3 /app/potd.py --force-download
+CMD crond -l 2 -L /app/cron.log && tail -f /app/cron.log
+# CMD sleep infinity

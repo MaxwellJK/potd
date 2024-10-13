@@ -283,7 +283,7 @@ if __name__ == "__main__":
 
     # Download wallpaper images
     # img_dir = Path(os.path.expandvars("$HOME")) / "Pictures" / "potd"
-    img_dir = Path('/Users/marco/Downloads/git/potd/image/')
+    img_dir = Path('/app/image/')
     img_dir.mkdir(exist_ok=True, parents=True)
     # todaystr = datetime.date.today().isoformat().replace("-", "")
     # spec_path = img_dir / f"{todaystr}-{args.site}-{args.n}.jpg"

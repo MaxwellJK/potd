@@ -1,3 +1,4 @@
 # must be ended with a new line "LF" (Unix) and not "CRLF" (Windows)
-* */6 * * * echo python3 /app/potd.py
+# * */6 * * *  python3 /app/potd.py --force-download
+*/1 * * * * python3 /app/potd.py --force-download
 # An empty line is required at the end of this file for a valid cron file.
