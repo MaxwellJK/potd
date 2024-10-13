@@ -7,9 +7,7 @@ on:
     branches: [ "main" ]
 
 jobs:
-
   build:
-
     runs-on: ubuntu-latest
 
     steps:
@@ -38,9 +36,9 @@ jobs:
     #     docker push ghcr.io/maxwelljk/potd:latest
     #     echo "Done"
 
-      - name: Build and push
-        uses: docker/build-push-action@v6
-        with:
-          platforms: linux/amd64,linux/arm64
-          push: true
-          tags: ghcr.io/maxwelljk/potd:${{ steps.unixts.outputs.tag_ts }}, push ghcr.io/maxwelljk/potd:latest
+    - name: Build and push
+      uses: docker/build-push-action@v6
+      with:
+        platforms: linux/amd64,linux/arm64
+        push: true
+        tags: ghcr.io/maxwelljk/potd:${{ steps.unixts.outputs.tag_ts }}, push ghcr.io/maxwelljk/potd:latest
