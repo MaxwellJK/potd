@@ -1,18 +1,17 @@
 #!/usr/bin/python
 
 # Copyright (C) 2023 Raffaele Mancuso
+from bs4 import BeautifulSoup, NavigableString
+from pathlib import Path
+from urllib import request, parse
 
-import requests
-from bs4 import BeautifulSoup
-import datetime
 import argparse
-import os
+import json
 import random
 import re
-from pathlib import Path
+import requests
 import subprocess
 import sys
-
 
 def downloadFile(url, output_filepath):
     #print("Downloading '" + str(url) + "' into '" + str(output_filepath) + "'")
@@ -35,27 +34,34 @@ def downloadFile(url, output_filepath):
 # Get the link of the Smithsonian image of the day
 def getSmithLink(out_file):
     # Download web page
-    r = requests.get("https://www.smithsonianmag.com/category/photo-of-the-day/")
+    base_url = "https://photocontest.smithsonianmag.com"
+    r = requests.get(base_url+"/photocontest")
     if r.status_code != 200:
         print("ERROR: no image of the day found for Smithsonian")
         return None
-    # Get POTD webpage
+    # Get Featured Entries webpage
     soup = BeautifulSoup(r.content, "lxml")
-    div_item = soup.find("aside", class_="day-feature")
+    div_item = soup.find("div", class_="photo-container")
     assert div_item is not None
-    link = div_item.find("a")["href"]
-    assert link is not None
+    img_list = div_item.find_all(class_="lightbox-thumbnail")
+    element = random.choice (img_list)
+    link = base_url + element['href']
+    r = requests.get(link)
+    soup = BeautifulSoup(r.content, "lxml")
+    # assert link is not None
+    div_item = soup.find("div", class_="photo-detail")
+    img_link = "https"+div_item.find("img")["src"].split('https')[2]
     # Scrape the real image link
     r = requests.get(link)
     if r.status_code != 200:
         print("ERROR: Image webpage error")
         return None
-    soup = BeautifulSoup(r.content, "lxml")
-    div_item = soup.find("div", class_="photo_detail_wrapper")
-    assert div_item is not None
-    div_item2 = div_item.find("div", class_="photo-detail")
-    assert div_item2 is not None
-    img_link = div_item.find("img")["src"]
+    # soup = BeautifulSoup(r.content, "lxml")
+    # div_item = soup.find("div", class_="photo_detail_wrapper")
+    # assert div_item is not None
+    # div_item2 = div_item.find("div", class_="photo-detail")
+    # assert div_item2 is not None
+    # img_link = div_item.find("img")["src"]
     downloadFile(img_link, out_file)
     return out_file
 
@@ -101,22 +107,31 @@ def getNGLink(out_file):
 
 # Get link of the Bing image of the day
 def getBingLink(out_file):
-    r = requests.get("https://www.bing.com", stream=True)
-    if r.status_code != 200:
-        print("ERROR: status_code: " + r.status_code)
-        sys.exit()
-    # get text
-    soup = BeautifulSoup(r.content, "lxml")
-    # re.match -> only matches AT THE BEGINNING OF THE STRING
-    # *? is the non-greedy version
-    # div_img = soup.find("div", {"class", "img_cont"})
-    div_img = soup.find("link", id="preloadBg", href=True)
-    assert div_img is not None
-    img_link = div_img["style"]
-    img_link = re.search(r"url\((.*)&", img_link).group(1)
-    img_link = "https://www.bing.com" + img_link
-    downloadFile(img_link, out_file)
-    return out_file
+    # r = requests.get("https://www.bing.com", stream=True)
+    # if r.status_code != 200:
+    #     print("ERROR: status_code: " + r.status_code)
+    #     sys.exit()
+    # # get text
+    # soup = BeautifulSoup(r.content, "lxml")
+    # # re.match -> only matches AT THE BEGINNING OF THE STRING
+    # # *? is the non-greedy version
+    # # div_img = soup.find("div", {"class", "img_cont"})
+    # div_img = soup.find("link", id="preloadBg", href=True)
+    # assert div_img is not None
+    # img_link = div_img["style"]
+    # img_link = re.search(r"url\((.*)&", img_link).group(1)
+    # img_link = "https://www.bing.com" + img_link
+    # downloadFile(img_link, out_file)
+    # return out_file
+    bing_url = 'https://www.bing.com'
+    bing_api_url = '{bing_url}/HPImageArchive.aspx?{params}'.format(
+        bing_url=bing_url, params=parse.urlencode(dict(format='js', idx='0', n='1', mkt='en-GB')))
+    api_data = request.urlopen(bing_api_url)
+    if api_data.code == 200:
+        bing_data = json.loads(api_data.read().decode())
+        bing_api_url = '{bing_url}{url}'.format(bing_url=bing_url, url=bing_data['images'][0]['url'])
+        downloadFile(bing_api_url, out_file)
+        return out_file
 
 
 # Get link of the Guardian image of the day
@@ -158,13 +173,64 @@ def getNASALink(out_file):
     r = requests.get(base_url)
     if r.status_code != 200:
         print("ERROR: status_code is not 200, but instead it's " + str(r.status_code))
-        sys.exit()
+        return None
     # get binary response content
     soup = BeautifulSoup(r.content, "lxml")
     div_img = soup.find("img")
     highest_res_link = base_url + "/" + div_img["src"]
     downloadFile(highest_res_link, out_file)
     return out_file
+
+
+def get35photoLink(out_file):
+    base_url = 'https://35photo.pro/rating/photo_day/'
+    genre_map = {  # noqa
+          408: 'Abstraction'
+        , 409: 'Aerial Photography'
+        , 108: 'Uncategorized'
+        , 97: 'Glamour'
+        , 101: 'City/Architecture'
+        , 114: 'Genre Portrait'
+        , 507: 'Female Portrait'
+        , 103: 'Animals'
+        , 397: 'Conceptual'
+        , 102: 'Macro'
+        , 506: 'Male Portrait'
+        , 104: 'Still Life'
+        , 414: 'Night'
+        , 98: 'Nude'
+        , 99: 'Landscape'
+        , 402: 'Film'
+        , 109: 'Underwater World'
+        , 96: 'Portrait'
+        , 415: 'Staged Photography'
+        , 396: 'Family Photography'
+        , 105: 'Sports'
+        , 94: 'Street/Reportage'
+        , 400: 'Black and White'
+    }
+    genre_white_list = [408, 409, 108, 101, 103, 102, 104, 414, 98, 99, 109, 94, 400]
+    base_data = request.urlopen(base_url)
+    if base_data.code == 200:
+        url_match = re.search(r'"https://(?P<url>\S+?)#cat0"', base_data.read().decode())
+        if url_match:
+            detail_url = 'https://{}#cat0'.format(url_match.groupdict()['url'])
+            detail_data = request.urlopen(detail_url)
+            if detail_data.code == 200:
+                detail_data_str = detail_data.read().decode()
+                genre_match = re.search(r':\s+<a href="https://35photo.pro/genre_(?P<genre>\d+)/">', detail_data_str)
+                if genre_match:
+                    genre = int(genre_match.groupdict()['genre'])
+                    if genre not in genre_white_list:
+                        return None
+                main_pref = r'https://35photo.pro/photos_main/'
+                photo_match = re.search(r'"{}(?P<photo>\S+?)"'.format(main_pref), detail_data_str)
+                if photo_match:
+                    # return '{}{}'.format(main_pref, photo_match.groupdict()['photo'])
+                    img_link='{}{}'.format(main_pref, photo_match.groupdict()['photo'])
+                    downloadFile(img_link, out_file)
+                    return out_file
+    return None
 
 
 # MAIN
@@ -175,7 +241,7 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "--site",
-        choices=["ng", "bing", "wiki", "guardian", "nasa", "smith", "random"],
+        choices=["ng", "bing", "wiki", "guardian", "nasa", "smith", "35photo", "random"],
         help="The website from which to download Photo of the Day.",
         default="random",
     )
@@ -199,7 +265,9 @@ if __name__ == "__main__":
     # Ask the user which website to use
     if args.site == "":
         arr = [("ng", "National Geographic"), ("bing","Bing"), ("wiki", "Wikimedia"),
-               ("guardian", "The Guardian"), ("nasa", "NASA"), ("smith", "The Smithsonian")]
+               ("guardian", "The Guardian"), ("nasa", "NASA"), ("smith", "The Smithsonian"),
+               ("35photo", "35 Photo")
+               ]
         print("Choose a website:")
         for i,(_,site) in enumerate(arr):
             print(f"{i}. {site}")
@@ -234,8 +302,10 @@ if __name__ == "__main__":
             getNASALink(spec_path)
         elif args.site == "smith":
             getSmithLink(spec_path)
+        elif args.site == "35photo":
+            get35photoLink(spec_path)
         elif args.site == "random":
-            sites_list = [getNGLink, getBingLink, getWikiMediaLink, getNASALink]
+            sites_list = [getNGLink, getBingLink, getWikiMediaLink, getNASALink, get35photoLink]
             random.choice(sites_list)(spec_path)
         else:
             print("ERROR: Unknown site")
